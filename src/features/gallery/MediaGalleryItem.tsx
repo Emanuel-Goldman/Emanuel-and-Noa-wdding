@@ -9,6 +9,11 @@ export function MediaGalleryItem({ item }: { item: MediaDocument }) {
         <video controls playsInline preload="metadata" aria-label={caption}>
           <source src={item.downloadURL} type={item.contentType} />
         </video>
+        {item.uploaderName && (
+          <span className="gallery-item__caption" aria-hidden="true">
+            {caption}
+          </span>
+        )}
       </div>
     )
   }
@@ -16,6 +21,11 @@ export function MediaGalleryItem({ item }: { item: MediaDocument }) {
   return (
     <div className="gallery-item">
       <img src={item.downloadURL} alt={caption} loading="lazy" />
+      {item.uploaderName && (
+        <span className="gallery-item__caption" aria-hidden="true">
+          {caption}
+        </span>
+      )}
     </div>
   )
 }
