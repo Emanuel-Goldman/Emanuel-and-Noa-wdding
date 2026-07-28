@@ -22,15 +22,15 @@ export function MediaUploader() {
 
   return (
     <section className="uploader" aria-labelledby="uploader-heading">
-      <h2 id="uploader-heading">Share your photos &amp; videos</h2>
+      <h2 id="uploader-heading">שתפו תמונות וסרטונים</h2>
 
-      <label htmlFor="uploader-name">Your name (optional)</label>
+      <label htmlFor="uploader-name">השם שלך (לא חובה)</label>
       <input
         id="uploader-name"
         type="text"
         value={uploaderName}
         onChange={(event) => handleNameChange(event.target.value)}
-        placeholder="e.g. Aunt Rachel"
+        placeholder="לדוגמה: דודה רחל"
         maxLength={80}
       />
 
@@ -44,9 +44,9 @@ export function MediaUploader() {
           />
           <circle cx="12" cy="14" r="3.2" stroke="currentColor" strokeWidth="1.8" />
         </svg>
-        Choose photos or videos
+        בחרו תמונות או סרטונים
       </label>
-      <label htmlFor="media-input" className="upload-fab" aria-label="Add photos or videos">
+      <label htmlFor="media-input" className="upload-fab" aria-label="הוספת תמונות או סרטונים">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
         </svg>

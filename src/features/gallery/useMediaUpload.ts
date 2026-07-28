@@ -22,7 +22,7 @@ export function useMediaUpload() {
         if (!isAcceptedFile(file)) {
           setItems((prev) => [
             ...prev,
-            { id, fileName: file.name, status: 'error', progress: 0, message: 'Only photos and videos are allowed.' },
+            { id, fileName: file.name, status: 'error', progress: 0, message: 'מותר להעלות רק תמונות וסרטונים.' },
           ])
           return
         }
@@ -30,7 +30,7 @@ export function useMediaUpload() {
         if (file.size > MAX_FILE_SIZE_BYTES) {
           setItems((prev) => [
             ...prev,
-            { id, fileName: file.name, status: 'error', progress: 0, message: 'File is larger than 300MB.' },
+            { id, fileName: file.name, status: 'error', progress: 0, message: 'הקובץ גדול מ-300MB.' },
           ])
           return
         }
@@ -44,7 +44,7 @@ export function useMediaUpload() {
           .catch((error: unknown) =>
             updateItem(id, {
               status: 'error',
-              message: error instanceof Error ? error.message : 'Upload failed.',
+              message: error instanceof Error ? error.message : 'ההעלאה נכשלה.',
             }),
           )
       })

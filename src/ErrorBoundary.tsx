@@ -18,7 +18,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div role="alert" className="error-boundary">
-          <p>Something went wrong. Please refresh the page and try again.</p>
+          <p>משהו השתבש. נא לרענן את הדף ולנסות שוב.</p>
         </div>
       )
     }

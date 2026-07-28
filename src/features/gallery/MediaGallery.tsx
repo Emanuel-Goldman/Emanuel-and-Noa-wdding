@@ -7,15 +7,15 @@ export function MediaGallery() {
   return (
     <section className="gallery" aria-labelledby="gallery-heading">
       <div className="section-heading">
-        <h2 id="gallery-heading">Wedding gallery</h2>
+        <h2 id="gallery-heading">גלריית החתונה</h2>
         <span className="live-badge">
           <span className="live-badge__dot" aria-hidden="true" />
-          Live
+          לייב
         </span>
       </div>
 
-      {state.status === 'loading' && <p>Loading photos…</p>}
-      {state.status === 'error' && <p role="alert">Couldn&rsquo;t load the gallery: {state.message}</p>}
+      {state.status === 'loading' && <p>טוען תמונות…</p>}
+      {state.status === 'error' && <p role="alert">לא הצלחנו לטעון את הגלריה: {state.message}</p>}
       {state.status === 'ready' && state.items.length === 0 && (
         <div className="gallery-empty">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -27,7 +27,7 @@ export function MediaGallery() {
             />
             <circle cx="12" cy="14" r="3.2" stroke="currentColor" strokeWidth="1.6" />
           </svg>
-          <p>No photos yet — be the first to share one!</p>
+          <p>אין עדיין תמונות — היו הראשונים לשתף!</p>
         </div>
       )}
       {state.status === 'ready' && state.items.length > 0 && (

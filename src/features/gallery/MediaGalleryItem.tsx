@@ -1,7 +1,7 @@
 import type { MediaDocument } from './types'
 
 export function MediaGalleryItem({ item }: { item: MediaDocument }) {
-  const caption = item.uploaderName ? `Shared by ${item.uploaderName}` : 'Shared by a guest'
+  const caption = item.uploaderName ? `מאת ${item.uploaderName}` : 'מאת אורח/ת'
 
   if (item.contentType.startsWith('video/')) {
     return (
