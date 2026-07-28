@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /media/{mediaId} {
+      allow read: if true;
+      allow create: if isValidNewMediaDocument();
+      allow update, delete: if false;
+
+      function isValidNewMediaDocument() {
+        let data = request.resource.data;
+        return data.keys().hasAll(['storagePath', 'downloadURL', 'contentType', 'createdAt'])
+          && data.keys().hasOnly(['storagePath', 'downloadURL', 'contentType', 'createdAt', 'uploaderName', 'sizeBytes'])
+          && data.storagePath is string
+          && data.storagePath.matches('^uploads/.+')
+          && data.downloadURL is string
+          && data.downloadURL.matches('^https://firebasestorage\\.googleapis\\.com/.*')
+          && data.contentType is string
+          && data.contentType.matches('(image|video)/.*')
+          && data.createdAt == request.time
+          && (!('uploaderName' in data) || (data.uploaderName is string && data.uploaderName.size() <= 80))
+          && (!('sizeBytes' in data) || (data.sizeBytes is number && data.sizeBytes > 0 && data.sizeBytes <= 300 * 1024 * 1024));
+      }
+    }
+  }
+}

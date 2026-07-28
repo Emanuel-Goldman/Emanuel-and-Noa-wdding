@@ -1,0 +1,12 @@
+node_modules
+dist
+*.tsbuildinfo
+.env
+.env.*.local
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/
+*.local
+.claude/settings.local.json
+*service-account*.json
