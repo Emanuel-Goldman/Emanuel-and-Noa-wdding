@@ -3,7 +3,19 @@
     "site": "emanuel-and-noa",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "headers": [
+      {
+        "comment": "Default: revalidate every load. Caching the HTML pins visitors to an old build, because it names the content-hashed asset files.",
+        "source": "**",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "comment": "Asset filenames are content-hashed, so they can be cached forever. Listed after the catch-all so it wins for these paths.",
+        "source": "/assets/**",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      }
+    ]
   },
   "firestore": {
     "rules": "firestore.rules",
