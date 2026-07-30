@@ -19,6 +19,21 @@ service firebase.storage {
       }
     }
 
+    // Client-generated gallery-grid thumbnails: small downscaled JPEGs
+    // uploaded alongside the original in uploads/{fileName}, never the source
+    // of truth. Same deliberate open-delete risk as uploads/ above.
+    match /uploads/thumbs/{fileName} {
+      allow read: if true;
+      allow create: if isValidThumbnailUpload();
+      allow update: if false;
+      allow delete: if true;
+
+      function isValidThumbnailUpload() {
+        return request.resource.size <= 5 * 1024 * 1024
+          && request.resource.contentType == 'image/jpeg';
+      }
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

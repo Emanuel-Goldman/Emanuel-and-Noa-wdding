@@ -1,29 +1,33 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MAX_PHOTO_ITEMS, MAX_VIDEO_ITEMS } from './constants'
+import { getMediaCounts } from './mediaRepository'
 import { MediaGalleryItem } from './MediaGalleryItem'
 import { MediaLightbox } from './MediaLightbox'
 import { useGalleryMedia } from './useGalleryMedia'
 import { useMediaDeletion } from './useMediaDeletion'
-import type { MediaDocument } from './types'
+import type { MediaCounts, MediaDocument } from './types'
 
 export function MediaGallery({ isAdmin }: { isAdmin: boolean }) {
-  const state = useGalleryMedia()
+  const { state, hasMore, loadMore } = useGalleryMedia()
   const [previewItem, setPreviewItem] = useState<MediaDocument | null>(null)
   const { deletingId, error: deletionError, remove } = useMediaDeletion()
-  const counts =
-    state.status === 'ready'
-      ? state.items.reduce(
-          (total, item) => {
-            if (item.contentType.startsWith('video/')) {
-              total.videos += 1
-            } else if (item.contentType.startsWith('image/')) {
-              total.photos += 1
-            }
-            return total
-          },
-          { photos: 0, videos: 0 },
-        )
-      : null
+  const [counts, setCounts] = useState<MediaCounts | null>(null)
+
+  // Re-reads the true collection totals (not just the loaded page) each time
+  // the live gallery page changes, so the badge stays accurate once pagination
+  // means `state.items` no longer covers every item in the gallery.
+  useEffect(() => {
+    if (state.status !== 'ready') return
+    let cancelled = false
+    getMediaCounts()
+      .then((result) => {
+        if (!cancelled) setCounts(result)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [state])
 
   return (
     <section className="gallery" aria-labelledby="gallery-heading">
@@ -92,6 +96,12 @@ export function MediaGallery({ isAdmin }: { isAdmin: boolean }) {
             />
           ))}
         </div>
+      )}
+
+      {state.status === 'ready' && state.items.length > 0 && hasMore && (
+        <button type="button" className="load-more-button" onClick={loadMore}>
+          טענו עוד
+        </button>
       )}
 
       {previewItem && <MediaLightbox item={previewItem} onClose={() => setPreviewItem(null)} />}

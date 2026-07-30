@@ -19,10 +19,11 @@ import {
   getDownloadURL,
   ref,
   uploadBytesResumable,
-  type UploadTaskSnapshot,
+  type UploadTask,
 } from 'firebase/storage'
 import { db, storage } from '../../firebase/client'
-import { MAX_GALLERY_ITEMS, MEDIA_COLLECTION, STORAGE_FOLDER } from './constants'
+import { createImageThumbnail } from './imageThumbnail'
+import { MAX_GALLERY_ITEMS, MEDIA_COLLECTION, STORAGE_FOLDER, THUMBNAIL_STORAGE_FOLDER } from './constants'
 import type { MediaCounts, MediaDocument } from './types'
 
 function sanitizeFileName(fileName: string): string {
@@ -42,6 +43,8 @@ function parseMediaDocument(id: string, data: DocumentData): MediaDocument | nul
     id,
     storagePath: data.storagePath,
     downloadURL: data.downloadURL,
+    thumbnailPath: typeof data.thumbnailPath === 'string' ? data.thumbnailPath : null,
+    thumbnailURL: typeof data.thumbnailURL === 'string' ? data.thumbnailURL : null,
     contentType: data.contentType,
     uploaderName: typeof data.uploaderName === 'string' ? data.uploaderName : null,
     sizeBytes: typeof data.sizeBytes === 'number' ? data.sizeBytes : null,
@@ -50,13 +53,14 @@ function parseMediaDocument(id: string, data: DocumentData): MediaDocument | nul
 }
 
 export function subscribeToRecentMedia(
+  pageSize: number,
   onChange: (items: MediaDocument[]) => void,
   onError: (error: Error) => void,
 ): Unsubscribe {
   const mediaQuery = query(
     collection(db, MEDIA_COLLECTION),
     orderBy('createdAt', 'desc'),
-    limit(MAX_GALLERY_ITEMS),
+    limit(Math.min(pageSize, MAX_GALLERY_ITEMS)),
   )
 
   return onSnapshot(
@@ -118,51 +122,104 @@ export async function deleteMediaItem(item: MediaDocument): Promise<void> {
     }
   }
 
+  if (item.thumbnailPath) {
+    try {
+      await deleteObject(ref(storage, item.thumbnailPath))
+    } catch (error) {
+      if (!isObjectAlreadyGone(error)) {
+        throw error
+      }
+    }
+  }
+
   await deleteDoc(documentRef(db, MEDIA_COLLECTION, item.id))
 }
 
+function trackCombinedProgress(tasks: UploadTask[], onProgress: (percent: number) => void) {
+  const report = () => {
+    let transferred = 0
+    let total = 0
+    tasks.forEach((task) => {
+      transferred += task.snapshot.bytesTransferred
+      total += task.snapshot.totalBytes
+    })
+    onProgress(total > 0 ? Math.round((transferred / total) * 100) : 0)
+  }
+  tasks.forEach((task) => task.on('state_changed', report))
+}
+
+function waitForTask(task: UploadTask): Promise<void> {
+  return new Promise((resolve, reject) => {
+    task.on('state_changed', undefined, reject, () => resolve())
+  })
+}
+
+/**
+ * Uploads the original file untouched (full quality, kept forever), plus a
+ * small downscaled JPEG thumbnail alongside it when the file is an image.
+ * The gallery grid renders the thumbnail; only the lightbox and downloads
+ * use the original. Thumbnail generation failures never block the original
+ * upload — the grid falls back to the original for that item.
+ */
 export function uploadMediaFile(
   file: File,
   uploaderName: string | null,
   onProgress: (percent: number) => void,
 ): { cancel: () => void; done: Promise<void> } {
   const uuid = crypto.randomUUID()
-  const storagePath = `${STORAGE_FOLDER}/${uuid}-${sanitizeFileName(file.name)}`
-  const storageRef = ref(storage, storagePath)
-  const uploadTask = uploadBytesResumable(storageRef, file, {
-    contentType: file.type,
-  })
+  const safeName = sanitizeFileName(file.name)
+  const storagePath = `${STORAGE_FOLDER}/${uuid}-${safeName}`
 
-  const done = new Promise<void>((resolve, reject) => {
-    uploadTask.on(
-      'state_changed',
-      (snapshot: UploadTaskSnapshot) => {
-        onProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100))
-      },
-      (error) => reject(error),
-      () => {
-        void (async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref)
-            // uploaderName is omitted entirely (not written as null) so it satisfies
-            // the Firestore rule's `data.uploaderName is string` check when present.
-            const mediaData: DocumentData = {
-              storagePath,
-              downloadURL,
-              contentType: file.type,
-              sizeBytes: file.size,
-              createdAt: serverTimestamp(),
-              ...(uploaderName ? { uploaderName } : {}),
-            }
-            await addDoc(collection(db, MEDIA_COLLECTION), mediaData)
-            resolve()
-          } catch (error) {
-            reject(error instanceof Error ? error : new Error('Failed to finalize upload'))
-          }
-        })()
-      },
-    )
-  })
+  let cancelled = false
+  let activeTasks: UploadTask[] = []
+  const cancel = () => {
+    cancelled = true
+    activeTasks.forEach((task) => task.cancel())
+  }
 
-  return { cancel: () => uploadTask.cancel(), done }
+  const done = (async () => {
+    const thumbnailBlob = await createImageThumbnail(file)
+    if (cancelled) {
+      throw new Error('ההעלאה בוטלה.')
+    }
+
+    const thumbnailPath = thumbnailBlob ? `${THUMBNAIL_STORAGE_FOLDER}/${uuid}-${safeName}.jpg` : null
+
+    const uploadTask = uploadBytesResumable(ref(storage, storagePath), file, {
+      contentType: file.type,
+    })
+    const thumbnailTask =
+      thumbnailBlob && thumbnailPath
+        ? uploadBytesResumable(ref(storage, thumbnailPath), thumbnailBlob, {
+            contentType: 'image/jpeg',
+          })
+        : null
+
+    activeTasks = thumbnailTask ? [uploadTask, thumbnailTask] : [uploadTask]
+    trackCombinedProgress(activeTasks, onProgress)
+
+    try {
+      await Promise.all(activeTasks.map(waitForTask))
+    } catch (error) {
+      throw error instanceof Error ? error : new Error('ההעלאה נכשלה.')
+    }
+
+    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref)
+    const thumbnailURL = thumbnailTask ? await getDownloadURL(thumbnailTask.snapshot.ref) : null
+
+    // uploaderName is omitted entirely (not written as null) so it satisfies
+    // the Firestore rule's `data.uploaderName is string` check when present.
+    const mediaData: DocumentData = {
+      storagePath,
+      downloadURL,
+      contentType: file.type,
+      sizeBytes: file.size,
+      createdAt: serverTimestamp(),
+      ...(thumbnailPath && thumbnailURL ? { thumbnailPath, thumbnailURL } : {}),
+      ...(uploaderName ? { uploaderName } : {}),
+    }
+    await addDoc(collection(db, MEDIA_COLLECTION), mediaData)
+  })()
+
+  return { cancel, done }
 }

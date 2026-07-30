@@ -28,7 +28,7 @@ export function MediaGalleryItem({ item, onSelect, isAdmin, isDeleting, onDelete
           onClick={() => onSelect(item)}
           aria-label={`הגדלת התמונה ${caption}`}
         >
-          <img src={item.downloadURL} alt="" loading="lazy" />
+          <img src={item.thumbnailURL ?? item.downloadURL} alt="" loading="lazy" />
         </button>
       )}
 

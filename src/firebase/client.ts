@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
+import { connectStorageEmulator, getStorage } from 'firebase/storage'
 
 const requiredEnvVars = [
   'VITE_FIREBASE_API_KEY',
@@ -48,3 +48,11 @@ const app = initializeApp({
 
 export const db = getFirestore(app)
 export const storage = getStorage(app)
+
+// Local-only: point the SDK at the Firebase Emulator Suite instead of the real
+// project so gallery changes can be tested without touching production data.
+// Never true in a deployed build; the CI workflow does not set this variable.
+if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
+  connectFirestoreEmulator(db, '127.0.0.1', 8080)
+  connectStorageEmulator(storage, '127.0.0.1', 9199)
+}
