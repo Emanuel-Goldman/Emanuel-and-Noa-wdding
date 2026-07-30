@@ -3,11 +3,13 @@ import { MAX_PHOTO_ITEMS, MAX_VIDEO_ITEMS } from './constants'
 import { MediaGalleryItem } from './MediaGalleryItem'
 import { MediaLightbox } from './MediaLightbox'
 import { useGalleryMedia } from './useGalleryMedia'
+import { useMediaDeletion } from './useMediaDeletion'
 import type { MediaDocument } from './types'
 
-export function MediaGallery() {
+export function MediaGallery({ isAdmin }: { isAdmin: boolean }) {
   const state = useGalleryMedia()
   const [previewItem, setPreviewItem] = useState<MediaDocument | null>(null)
+  const { deletingId, error: deletionError, remove } = useMediaDeletion()
   const counts =
     state.status === 'ready'
       ? state.items.reduce(
@@ -52,6 +54,15 @@ export function MediaGallery() {
         </div>
       )}
 
+      {isAdmin && (
+        <p className="admin-notice">מצב ניהול פעיל — הקישו על סמל הפח כדי למחוק פריט.</p>
+      )}
+      {deletionError && (
+        <p className="admin-notice admin-notice--error" role="alert">
+          {deletionError}
+        </p>
+      )}
+
       {state.status === 'loading' && <p>טוען תמונות…</p>}
       {state.status === 'error' && <p role="alert">לא הצלחנו לטעון את הגלריה: {state.message}</p>}
       {state.status === 'ready' && state.items.length === 0 && (
@@ -71,7 +82,14 @@ export function MediaGallery() {
       {state.status === 'ready' && state.items.length > 0 && (
         <div className="gallery-grid">
           {state.items.map((item) => (
-            <MediaGalleryItem key={item.id} item={item} onSelect={setPreviewItem} />
+            <MediaGalleryItem
+              key={item.id}
+              item={item}
+              onSelect={setPreviewItem}
+              isAdmin={isAdmin}
+              isDeleting={deletingId === item.id}
+              onDelete={remove}
+            />
           ))}
         </div>
       )}

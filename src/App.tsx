@@ -1,10 +1,15 @@
 import { ErrorBoundary } from './ErrorBoundary'
+import { AdminToggle } from './features/admin/AdminToggle'
+import { useAdminMode } from './features/admin/useAdminMode'
 import { MediaGallery } from './features/gallery/MediaGallery'
 import { MediaUploader } from './features/gallery/MediaUploader'
 
 export default function App() {
+  const { isAdmin, unlock, lock } = useAdminMode()
+
   return (
     <ErrorBoundary>
+      <AdminToggle isAdmin={isAdmin} onUnlock={unlock} onLock={lock} />
       <main className="page">
         <header className="page-header">
           <div className="page-header__divider" aria-hidden="true">
@@ -18,7 +23,7 @@ export default function App() {
           <p>שתפו את התמונות והסרטונים שלכם מהחגיגה!</p>
         </header>
         <MediaUploader />
-        <MediaGallery />
+        <MediaGallery isAdmin={isAdmin} />
       </main>
     </ErrorBoundary>
   )

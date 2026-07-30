@@ -283,25 +283,31 @@ input[type='text']:focus-visible,
   display: block;
 }
 
-/* The image tile is a <button>, so strip the UA chrome back to the div look. */
-.gallery-item--interactive {
+/* Fills the tile so the whole thumbnail is the tap target, with the UA button
+   chrome stripped back to how the plain tile used to look. */
+.gallery-item__open {
   display: block;
   width: 100%;
+  height: 100%;
   padding: 0;
   border: 0;
+  background: none;
   font: inherit;
   color: inherit;
   cursor: pointer;
+}
+
+.gallery-item__open img {
   transition: transform 0.15s ease;
 }
 
-.gallery-item--interactive:hover {
-  transform: scale(1.03);
+.gallery-item__open:hover img {
+  transform: scale(1.05);
 }
 
-.gallery-item--interactive:focus-visible {
+.gallery-item__open:focus-visible {
   outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
+  outline-offset: -3px;
 }
 
 .gallery-item__caption {
@@ -315,6 +321,57 @@ input[type='text']:focus-visible,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.gallery-item__delete {
+  position: absolute;
+  inset-block-start: 0.35rem;
+  inset-inline-end: 0.35rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(179, 38, 30, 0.92);
+  color: #fff;
+  cursor: pointer;
+}
+
+.gallery-item__delete:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.gallery-item__delete:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.gallery-item__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.admin-notice {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+  font-size: 0.85rem;
+}
+
+.admin-notice--error {
+  background: #fdecea;
+  color: var(--color-error);
 }
 
 .gallery-empty {
@@ -421,6 +478,118 @@ html:has(dialog[open]) {
   overflow: hidden;
 }
 
+/* Deliberately low-contrast: present for whoever is looking for it, easy for
+   guests to overlook. Still a 44px target so it is reachable when wanted. */
+.admin-toggle {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  opacity: 0.22;
+  cursor: pointer;
+}
+
+.admin-toggle:hover,
+.admin-toggle:focus-visible {
+  opacity: 1;
+}
+
+.admin-toggle:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+}
+
+.admin-toggle--active {
+  width: auto;
+  height: auto;
+  margin: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: var(--color-error);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.code-dialog {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  max-width: min(100vw - 2rem, 340px);
+  box-shadow: var(--shadow-md);
+}
+
+.code-dialog::backdrop {
+  background: rgba(20, 15, 12, 0.6);
+}
+
+.code-dialog__form {
+  padding: 1.5rem;
+}
+
+.code-dialog__form h2 {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.code-dialog__error {
+  margin: -0.6rem 0 1rem;
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+.code-dialog__actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.button-primary,
+.button-secondary {
+  flex: 1;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button-primary {
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+.button-secondary {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+
+.button-primary:focus-visible,
+.button-secondary:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 .error-boundary {
   padding: 2rem 1rem;
   text-align: center;
@@ -434,6 +603,12 @@ html:has(dialog[open]) {
   }
   50% {
     opacity: 0.35;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -469,8 +644,11 @@ html:has(dialog[open]) {
   .upload-button:active {
     transform: none;
   }
-  .gallery-item--interactive:hover {
+  .gallery-item__open:hover img {
     transform: none;
+  }
+  .gallery-item__spinner {
+    animation: none;
   }
   .lightbox[open] {
     animation: none;

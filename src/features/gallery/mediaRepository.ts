@@ -1,6 +1,9 @@
+import { FirebaseError } from 'firebase/app'
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc as documentRef,
   getCountFromServer,
   limit,
   onSnapshot,
@@ -11,7 +14,13 @@ import {
   type DocumentData,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { getDownloadURL, ref, uploadBytesResumable, type UploadTaskSnapshot } from 'firebase/storage'
+import {
+  deleteObject,
+  getDownloadURL,
+  ref,
+  uploadBytesResumable,
+  type UploadTaskSnapshot,
+} from 'firebase/storage'
 import { db, storage } from '../../firebase/client'
 import { MAX_GALLERY_ITEMS, MEDIA_COLLECTION, STORAGE_FOLDER } from './constants'
 import type { MediaCounts, MediaDocument } from './types'
@@ -86,6 +95,30 @@ export async function getMediaCounts(): Promise<MediaCounts> {
     photos: photos.data().count,
     videos: videos.data().count,
   }
+}
+
+function isObjectAlreadyGone(error: unknown): boolean {
+  return error instanceof FirebaseError && error.code === 'storage/object-not-found'
+}
+
+/**
+ * Removes the stored file first, then the document that points at it.
+ *
+ * That order keeps a partial failure recoverable: if the document delete fails
+ * the tile stays on screen and a retry finds the file already gone (tolerated
+ * below) and finishes the job. Deleting the document first would strand the
+ * file in the bucket with nothing left in the UI to retry from.
+ */
+export async function deleteMediaItem(item: MediaDocument): Promise<void> {
+  try {
+    await deleteObject(ref(storage, item.storagePath))
+  } catch (error) {
+    if (!isObjectAlreadyGone(error)) {
+      throw error
+    }
+  }
+
+  await deleteDoc(documentRef(db, MEDIA_COLLECTION, item.id))
 }
 
 export function uploadMediaFile(

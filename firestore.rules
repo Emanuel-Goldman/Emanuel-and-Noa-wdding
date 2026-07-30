@@ -6,7 +6,15 @@ service cloud.firestore {
     match /media/{mediaId} {
       allow read: if true;
       allow create: if isValidNewMediaDocument();
-      allow update, delete: if false;
+      allow update: if false;
+
+      // DELIBERATE, KNOWN RISK: deletion is open to any caller.
+      // The moderation panel is gated by a code held in client-side JavaScript,
+      // which the browser hands to anyone who asks, so this rule cannot check it.
+      // Anyone who can reach the app can delete any item. Accepted by the owner
+      // for a short-lived, single-event project. Do not copy this into anything
+      // that outlives the wedding.
+      allow delete: if true;
 
       function isValidNewMediaDocument() {
         let data = request.resource.data;
