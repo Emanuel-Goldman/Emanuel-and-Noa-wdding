@@ -20,12 +20,13 @@ export function MediaLightbox({ item, onClose }: Props) {
     return () => dialog.close()
   }, [])
 
-  // A click landing on the dialog element itself is a click on the backdrop:
-  // the image and controls are children and stop it from reaching here.
-  const handleBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
-    if (event.target === event.currentTarget) {
-      dialogRef.current?.close()
-    }
+  // Dismiss on anything that is not the photo or the close button. Comparing
+  // target to currentTarget is not enough: the frame element covers the whole
+  // dialog box, so it swallows every click that is not strictly on the backdrop.
+  const handleDismissClick = (event: MouseEvent<HTMLDialogElement>) => {
+    const target = event.target as HTMLElement
+    if (target.closest('.lightbox__image, .lightbox__close')) return
+    dialogRef.current?.close()
   }
 
   return (
@@ -34,7 +35,7 @@ export function MediaLightbox({ item, onClose }: Props) {
       className="lightbox"
       aria-label={`תצוגה מוגדלת ${caption}`}
       onClose={onClose}
-      onClick={handleBackdropClick}
+      onClick={handleDismissClick}
     >
       <div className="lightbox__frame">
         <button
