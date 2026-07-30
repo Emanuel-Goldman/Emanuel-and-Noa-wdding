@@ -15,7 +15,14 @@ export type GalleryState =
   | { status: 'error'; message: string }
   | { status: 'ready'; items: MediaDocument[] }
 
-export type UploadItemStatus = 'uploading' | 'success' | 'error'
+export type MediaCounts = {
+  photos: number
+  videos: number
+}
+
+export type MediaKind = 'photo' | 'video'
+
+export type UploadItemStatus = 'checking' | 'uploading' | 'success' | 'error'
 
 export type UploadItemState = {
   id: string

@@ -2,6 +2,8 @@
 
 A single-page, mobile-first web app for one-time use at the wedding: guests upload photos and videos from their phone, and everyone sees them appear live in a shared gallery. No login required. No backend server — the React app talks directly to Firebase, secured with Security Rules.
 
+The gallery shows live, separate counts and accepts up to **1,000 photos** and **50 videos** through the app.
+
 ## One-time Firebase setup (do this once, in your browser)
 
 1. Go to the [Firebase console](https://console.firebase.google.com), sign in, and create a new project (e.g. **"Emanuel & Noa Wedding"**, project ID `emanuel-noa-wedding`). Skip Google Analytics.

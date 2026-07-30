@@ -124,6 +124,49 @@ section h2 {
   animation: pulse 1.8s ease-in-out infinite;
 }
 
+.media-counts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 0 1.1rem;
+  border-block: 1px solid var(--color-border);
+}
+
+.media-count {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.65rem 0;
+}
+
+.media-count + .media-count {
+  margin-inline-start: 0.8rem;
+  padding-inline-start: 0.8rem;
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.media-count__label {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.media-count__value {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.media-count__value strong {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
 label {
   display: block;
   font-size: 0.9rem;

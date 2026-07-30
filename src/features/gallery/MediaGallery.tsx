@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MAX_PHOTO_ITEMS, MAX_VIDEO_ITEMS } from './constants'
 import { MediaGalleryItem } from './MediaGalleryItem'
 import { MediaLightbox } from './MediaLightbox'
 import { useGalleryMedia } from './useGalleryMedia'
@@ -7,6 +8,20 @@ import type { MediaDocument } from './types'
 export function MediaGallery() {
   const state = useGalleryMedia()
   const [previewItem, setPreviewItem] = useState<MediaDocument | null>(null)
+  const counts =
+    state.status === 'ready'
+      ? state.items.reduce(
+          (total, item) => {
+            if (item.contentType.startsWith('video/')) {
+              total.videos += 1
+            } else if (item.contentType.startsWith('image/')) {
+              total.photos += 1
+            }
+            return total
+          },
+          { photos: 0, videos: 0 },
+        )
+      : null
 
   return (
     <section className="gallery" aria-labelledby="gallery-heading">
@@ -17,6 +32,25 @@ export function MediaGallery() {
           לייב
         </span>
       </div>
+
+      {counts && (
+        <div className="media-counts" aria-live="polite" aria-label="מספר הפריטים בגלריה">
+          <p className="media-count">
+            <span className="media-count__label">תמונות</span>
+            <span className="media-count__value" dir="ltr">
+              <strong>{counts.photos.toLocaleString('he-IL')}</strong>
+              <span> / {MAX_PHOTO_ITEMS.toLocaleString('he-IL')}</span>
+            </span>
+          </p>
+          <p className="media-count">
+            <span className="media-count__label">סרטונים</span>
+            <span className="media-count__value" dir="ltr">
+              <strong>{counts.videos.toLocaleString('he-IL')}</strong>
+              <span> / {MAX_VIDEO_ITEMS.toLocaleString('he-IL')}</span>
+            </span>
+          </p>
+        </div>
+      )}
 
       {state.status === 'loading' && <p>טוען תמונות…</p>}
       {state.status === 'error' && <p role="alert">לא הצלחנו לטעון את הגלריה: {state.message}</p>}

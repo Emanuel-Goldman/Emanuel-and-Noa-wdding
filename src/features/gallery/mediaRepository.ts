@@ -1,18 +1,20 @@
 import {
   addDoc,
   collection,
+  getCountFromServer,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  where,
   type DocumentData,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { getDownloadURL, ref, uploadBytesResumable, type UploadTaskSnapshot } from 'firebase/storage'
 import { db, storage } from '../../firebase/client'
 import { MAX_GALLERY_ITEMS, MEDIA_COLLECTION, STORAGE_FOLDER } from './constants'
-import type { MediaDocument } from './types'
+import type { MediaCounts, MediaDocument } from './types'
 
 function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -64,6 +66,26 @@ export function subscribeToRecentMedia(
     },
     (error) => onError(error),
   )
+}
+
+function queryContentTypePrefix(prefix: 'image' | 'video') {
+  return query(
+    collection(db, MEDIA_COLLECTION),
+    where('contentType', '>=', `${prefix}/`),
+    where('contentType', '<', `${prefix}0`),
+  )
+}
+
+export async function getMediaCounts(): Promise<MediaCounts> {
+  const [photos, videos] = await Promise.all([
+    getCountFromServer(queryContentTypePrefix('image')),
+    getCountFromServer(queryContentTypePrefix('video')),
+  ])
+
+  return {
+    photos: photos.data().count,
+    videos: videos.data().count,
+  }
 }
 
 export function uploadMediaFile(
