@@ -240,6 +240,27 @@ input[type='text']:focus-visible,
   display: block;
 }
 
+/* The image tile is a <button>, so strip the UA chrome back to the div look. */
+.gallery-item--interactive {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.gallery-item--interactive:hover {
+  transform: scale(1.03);
+}
+
+.gallery-item--interactive:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 .gallery-item__caption {
   position: absolute;
   inset: auto 0 0 0;
@@ -284,6 +305,79 @@ input[type='text']:focus-visible,
   z-index: 10;
 }
 
+.lightbox {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  background: transparent;
+  max-width: min(100vw - 1.5rem, 900px);
+  max-height: 100dvh;
+  overflow: visible;
+}
+
+.lightbox::backdrop {
+  background: rgba(20, 15, 12, 0.88);
+}
+
+.lightbox[open] {
+  animation: lightbox-in 0.2s ease both;
+}
+
+.lightbox__frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lightbox__image {
+  display: block;
+  max-width: 100%;
+  /* Leave room for the caption so tall portrait shots still fit on a phone. */
+  max-height: calc(100dvh - 5rem);
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: var(--color-ink);
+}
+
+.lightbox__caption {
+  margin: 0;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.lightbox__close {
+  position: absolute;
+  inset-block-start: 0.5rem;
+  inset-inline-end: 0.5rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 15, 12, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+
+.lightbox__close:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Keep the page behind the modal from scrolling under the backdrop. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
 .error-boundary {
   padding: 2rem 1rem;
   text-align: center;
@@ -297,6 +391,17 @@ input[type='text']:focus-visible,
   }
   50% {
     opacity: 0.35;
+  }
+}
+
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -320,6 +425,12 @@ input[type='text']:focus-visible,
   }
   .upload-button:active {
     transform: none;
+  }
+  .gallery-item--interactive:hover {
+    transform: none;
+  }
+  .lightbox[open] {
+    animation: none;
   }
 }
 

@@ -1,8 +1,12 @@
+import { useState } from 'react'
 import { MediaGalleryItem } from './MediaGalleryItem'
+import { MediaLightbox } from './MediaLightbox'
 import { useGalleryMedia } from './useGalleryMedia'
+import type { MediaDocument } from './types'
 
 export function MediaGallery() {
   const state = useGalleryMedia()
+  const [previewItem, setPreviewItem] = useState<MediaDocument | null>(null)
 
   return (
     <section className="gallery" aria-labelledby="gallery-heading">
@@ -33,10 +37,12 @@ export function MediaGallery() {
       {state.status === 'ready' && state.items.length > 0 && (
         <div className="gallery-grid">
           {state.items.map((item) => (
-            <MediaGalleryItem key={item.id} item={item} />
+            <MediaGalleryItem key={item.id} item={item} onSelect={setPreviewItem} />
           ))}
         </div>
       )}
+
+      {previewItem && <MediaLightbox item={previewItem} onClose={() => setPreviewItem(null)} />}
     </section>
   )
 }

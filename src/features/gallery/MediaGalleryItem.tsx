@@ -1,8 +1,16 @@
+import { describeUploader } from './mediaCaption'
 import type { MediaDocument } from './types'
 
-export function MediaGalleryItem({ item }: { item: MediaDocument }) {
-  const caption = item.uploaderName ? `מאת ${item.uploaderName}` : 'מאת אורח/ת'
+type Props = {
+  item: MediaDocument
+  onSelect: (item: MediaDocument) => void
+}
 
+export function MediaGalleryItem({ item, onSelect }: Props) {
+  const caption = describeUploader(item)
+
+  // Videos keep their inline native controls: wrapping them in a button would
+  // swallow taps meant for play/scrub.
   if (item.contentType.startsWith('video/')) {
     return (
       <div className="gallery-item">
@@ -19,13 +27,18 @@ export function MediaGalleryItem({ item }: { item: MediaDocument }) {
   }
 
   return (
-    <div className="gallery-item">
-      <img src={item.downloadURL} alt={caption} loading="lazy" />
+    <button
+      type="button"
+      className="gallery-item gallery-item--interactive"
+      onClick={() => onSelect(item)}
+      aria-label={`הגדלת התמונה ${caption}`}
+    >
+      <img src={item.downloadURL} alt="" loading="lazy" />
       {item.uploaderName && (
         <span className="gallery-item__caption" aria-hidden="true">
           {caption}
         </span>
       )}
-    </div>
+    </button>
   )
 }
