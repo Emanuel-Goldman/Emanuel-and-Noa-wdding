@@ -19,7 +19,7 @@ service cloud.firestore {
       function isValidNewMediaDocument() {
         let data = request.resource.data;
         return data.keys().hasAll(['storagePath', 'downloadURL', 'contentType', 'createdAt'])
-          && data.keys().hasOnly(['storagePath', 'downloadURL', 'thumbnailPath', 'thumbnailURL', 'displayPath', 'displayURL', 'contentType', 'createdAt', 'uploaderName', 'sizeBytes'])
+          && data.keys().hasOnly(['storagePath', 'downloadURL', 'thumbnailPath', 'thumbnailURL', 'thumbnailSizeBytes', 'displayPath', 'displayURL', 'displaySizeBytes', 'contentType', 'createdAt', 'uploaderName', 'sizeBytes'])
           && data.storagePath is string
           && data.storagePath.matches('^uploads/.+')
           && data.downloadURL is string
@@ -32,9 +32,11 @@ service cloud.firestore {
           && (('thumbnailPath' in data) == ('thumbnailURL' in data))
           && (!('thumbnailPath' in data) || (data.thumbnailPath is string && data.thumbnailPath.matches('^uploads/thumbs/.+')))
           && (!('thumbnailURL' in data) || (data.thumbnailURL is string && data.thumbnailURL.matches('^https://firebasestorage\\.googleapis\\.com/.*')))
+          && (!('thumbnailSizeBytes' in data) || (data.thumbnailSizeBytes is number && data.thumbnailSizeBytes > 0 && data.thumbnailSizeBytes <= 5 * 1024 * 1024))
           && (('displayPath' in data) == ('displayURL' in data))
           && (!('displayPath' in data) || (data.displayPath is string && data.displayPath.matches('^uploads/display/.+')))
-          && (!('displayURL' in data) || (data.displayURL is string && data.displayURL.matches('^https://firebasestorage\\.googleapis\\.com/.*')));
+          && (!('displayURL' in data) || (data.displayURL is string && data.displayURL.matches('^https://firebasestorage\\.googleapis\\.com/.*')))
+          && (!('displaySizeBytes' in data) || (data.displaySizeBytes is number && data.displaySizeBytes > 0 && data.displaySizeBytes <= 10 * 1024 * 1024));
       }
     }
   }

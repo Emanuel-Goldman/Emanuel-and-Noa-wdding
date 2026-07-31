@@ -11,6 +11,8 @@ export type MediaDocument = {
   contentType: string
   uploaderName: string | null
   sizeBytes: number | null
+  thumbnailSizeBytes: number | null
+  displaySizeBytes: number | null
   createdAt: Timestamp | null
 }
 

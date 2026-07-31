@@ -58,6 +58,8 @@ function parseMediaDocument(id: string, data: DocumentData): MediaDocument | nul
     contentType: data.contentType,
     uploaderName: typeof data.uploaderName === 'string' ? data.uploaderName : null,
     sizeBytes: typeof data.sizeBytes === 'number' ? data.sizeBytes : null,
+    thumbnailSizeBytes: typeof data.thumbnailSizeBytes === 'number' ? data.thumbnailSizeBytes : null,
+    displaySizeBytes: typeof data.displaySizeBytes === 'number' ? data.displaySizeBytes : null,
     createdAt: data.createdAt ?? null,
   }
 }
@@ -112,17 +114,22 @@ export async function getMediaCounts(): Promise<MediaCounts> {
 }
 
 /**
- * Total bytes of the original uploaded files, summed server-side (no need to
- * download every document to add it up). Admin-only stat, not shown to
- * guests. Approximate: it counts originals only, not the small thumbnail and
- * display JPEG renditions generated alongside each photo, which add a modest
- * amount on top.
+ * Total bytes actually held in the Storage bucket for every item — original
+ * plus its thumbnail and display JPEG renditions — summed server-side (no
+ * need to download every document to add it up). Admin-only stat, not shown
+ * to guests. Still approximate for any item uploaded before the
+ * thumbnailSizeBytes/displaySizeBytes fields existed: those rows contribute
+ * only their original size here, even though the rendition files themselves
+ * are in the bucket.
  */
 export async function getMediaStorageBytes(): Promise<number> {
   const snapshot = await getAggregateFromServer(collection(db, MEDIA_COLLECTION), {
-    totalBytes: sum('sizeBytes'),
+    originalBytes: sum('sizeBytes'),
+    thumbnailBytes: sum('thumbnailSizeBytes'),
+    displayBytes: sum('displaySizeBytes'),
   })
-  return snapshot.data().totalBytes
+  const totals = snapshot.data()
+  return totals.originalBytes + totals.thumbnailBytes + totals.displayBytes
 }
 
 function isObjectAlreadyGone(error: unknown): boolean {
@@ -263,8 +270,12 @@ export function uploadMediaFile(
       contentType: file.type,
       sizeBytes: file.size,
       createdAt: serverTimestamp(),
-      ...(thumbnailPath && thumbnailURL ? { thumbnailPath, thumbnailURL } : {}),
-      ...(displayPath && displayURL ? { displayPath, displayURL } : {}),
+      ...(thumbnailPath && thumbnailURL && thumbnailBlob
+        ? { thumbnailPath, thumbnailURL, thumbnailSizeBytes: thumbnailBlob.size }
+        : {}),
+      ...(displayPath && displayURL && displayBlob
+        ? { displayPath, displayURL, displaySizeBytes: displayBlob.size }
+        : {}),
       ...(uploaderName ? { uploaderName } : {}),
     }
     await addDoc(collection(db, MEDIA_COLLECTION), mediaData)
