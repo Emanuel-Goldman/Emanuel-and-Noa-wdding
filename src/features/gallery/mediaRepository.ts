@@ -38,6 +38,12 @@ function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
 }
 
+// Every upload gets a fresh UUID-prefixed path and is never overwritten, so
+// the content behind a given path never changes — safe to cache forever.
+// Firebase Storage's default is `private, max-age=0` (no caching at all),
+// which meant every gallery visit re-downloaded every photo from scratch.
+const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
+
 function parseMediaDocument(id: string, data: DocumentData): MediaDocument | null {
   if (
     typeof data.storagePath !== 'string' ||
@@ -233,17 +239,20 @@ export function uploadMediaFile(
 
     const uploadTask = uploadBytesResumable(ref(storage, storagePath), file, {
       contentType: file.type,
+      cacheControl: IMMUTABLE_CACHE_CONTROL,
     })
     const thumbnailTask =
       thumbnailBlob && thumbnailPath
         ? uploadBytesResumable(ref(storage, thumbnailPath), thumbnailBlob, {
             contentType: 'image/jpeg',
+            cacheControl: IMMUTABLE_CACHE_CONTROL,
           })
         : null
     const displayTask =
       displayBlob && displayPath
         ? uploadBytesResumable(ref(storage, displayPath), displayBlob, {
             contentType: 'image/jpeg',
+            cacheControl: IMMUTABLE_CACHE_CONTROL,
           })
         : null
 
