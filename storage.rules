@@ -34,6 +34,23 @@ service firebase.storage {
       }
     }
 
+    // Client-generated lightbox renditions: larger downscaled JPEGs next to
+    // the thumbnail, used so photos that are HEIC on the original (typical
+    // for iPhone uploads) still have a version every browser can render at
+    // full-view size, not just in the grid. Same deliberate open-delete risk
+    // as uploads/ above.
+    match /uploads/display/{fileName} {
+      allow read: if true;
+      allow create: if isValidDisplayUpload();
+      allow update: if false;
+      allow delete: if true;
+
+      function isValidDisplayUpload() {
+        return request.resource.size <= 10 * 1024 * 1024
+          && request.resource.contentType == 'image/jpeg';
+      }
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

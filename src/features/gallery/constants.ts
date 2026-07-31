@@ -1,6 +1,7 @@
 export const MAX_FILE_SIZE_BYTES = 300 * 1024 * 1024 // 300MB, mirrors storage.rules
 export const STORAGE_FOLDER = 'uploads'
 export const THUMBNAIL_STORAGE_FOLDER = 'uploads/thumbs'
+export const DISPLAY_STORAGE_FOLDER = 'uploads/display'
 export const MEDIA_COLLECTION = 'media'
 export const MAX_PHOTO_ITEMS = 1000
 export const MAX_VIDEO_ITEMS = 50

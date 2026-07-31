@@ -6,6 +6,8 @@ export type MediaDocument = {
   downloadURL: string
   thumbnailPath: string | null
   thumbnailURL: string | null
+  displayPath: string | null
+  displayURL: string | null
   contentType: string
   uploaderName: string | null
   sizeBytes: number | null

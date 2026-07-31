@@ -48,7 +48,16 @@ export function MediaLightbox({ item, onClose }: Props) {
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
           </svg>
         </button>
-        <img className="lightbox__image" src={item.downloadURL} alt={caption} />
+        {/* displayURL (a JPEG rendition) first: the original is frequently
+            HEIC from an iPhone, which most non-Safari browsers cannot
+            render in an <img> tag at all. thumbnailURL is a smaller but
+            still-decodable fallback for items uploaded before this JPEG
+            rendition existed. */}
+        <img
+          className="lightbox__image"
+          src={item.displayURL ?? item.thumbnailURL ?? item.downloadURL}
+          alt={caption}
+        />
         <p className="lightbox__caption">{caption}</p>
       </div>
     </dialog>

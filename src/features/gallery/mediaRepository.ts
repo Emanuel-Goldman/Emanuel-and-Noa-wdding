@@ -22,8 +22,14 @@ import {
   type UploadTask,
 } from 'firebase/storage'
 import { db, storage } from '../../firebase/client'
-import { createImageThumbnail } from './imageThumbnail'
-import { MAX_GALLERY_ITEMS, MEDIA_COLLECTION, STORAGE_FOLDER, THUMBNAIL_STORAGE_FOLDER } from './constants'
+import { createImageRenditions } from './imageThumbnail'
+import {
+  DISPLAY_STORAGE_FOLDER,
+  MAX_GALLERY_ITEMS,
+  MEDIA_COLLECTION,
+  STORAGE_FOLDER,
+  THUMBNAIL_STORAGE_FOLDER,
+} from './constants'
 import type { MediaCounts, MediaDocument } from './types'
 
 function sanitizeFileName(fileName: string): string {
@@ -45,6 +51,8 @@ function parseMediaDocument(id: string, data: DocumentData): MediaDocument | nul
     downloadURL: data.downloadURL,
     thumbnailPath: typeof data.thumbnailPath === 'string' ? data.thumbnailPath : null,
     thumbnailURL: typeof data.thumbnailURL === 'string' ? data.thumbnailURL : null,
+    displayPath: typeof data.displayPath === 'string' ? data.displayPath : null,
+    displayURL: typeof data.displayURL === 'string' ? data.displayURL : null,
     contentType: data.contentType,
     uploaderName: typeof data.uploaderName === 'string' ? data.uploaderName : null,
     sizeBytes: typeof data.sizeBytes === 'number' ? data.sizeBytes : null,
@@ -132,6 +140,16 @@ export async function deleteMediaItem(item: MediaDocument): Promise<void> {
     }
   }
 
+  if (item.displayPath) {
+    try {
+      await deleteObject(ref(storage, item.displayPath))
+    } catch (error) {
+      if (!isObjectAlreadyGone(error)) {
+        throw error
+      }
+    }
+  }
+
   await deleteDoc(documentRef(db, MEDIA_COLLECTION, item.id))
 }
 
@@ -155,11 +173,15 @@ function waitForTask(task: UploadTask): Promise<void> {
 }
 
 /**
- * Uploads the original file untouched (full quality, kept forever), plus a
- * small downscaled JPEG thumbnail alongside it when the file is an image.
- * The gallery grid renders the thumbnail; only the lightbox and downloads
- * use the original. Thumbnail generation failures never block the original
- * upload — the grid falls back to the original for that item.
+ * Uploads the original file untouched (full quality, kept forever), plus two
+ * downscaled JPEG renditions alongside it when the file is an image: a small
+ * thumbnail for the gallery grid and a larger one for the lightbox. The
+ * lightbox needs its own JPEG (not just the original) because a large share
+ * of guest photos are iPhone HEIC files — undecodable in an <img> tag on
+ * most non-Apple browsers — so falling back to the original there would show
+ * a broken image to those guests. Rendition failures never block the
+ * original upload — the grid and lightbox fall back to the next best
+ * available URL for that item (see MediaLightbox).
  */
 export function uploadMediaFile(
   file: File,
@@ -178,12 +200,13 @@ export function uploadMediaFile(
   }
 
   const done = (async () => {
-    const thumbnailBlob = await createImageThumbnail(file)
+    const { thumbnail: thumbnailBlob, display: displayBlob } = await createImageRenditions(file)
     if (cancelled) {
       throw new Error('ההעלאה בוטלה.')
     }
 
     const thumbnailPath = thumbnailBlob ? `${THUMBNAIL_STORAGE_FOLDER}/${uuid}-${safeName}.jpg` : null
+    const displayPath = displayBlob ? `${DISPLAY_STORAGE_FOLDER}/${uuid}-${safeName}.jpg` : null
 
     const uploadTask = uploadBytesResumable(ref(storage, storagePath), file, {
       contentType: file.type,
@@ -194,8 +217,16 @@ export function uploadMediaFile(
             contentType: 'image/jpeg',
           })
         : null
+    const displayTask =
+      displayBlob && displayPath
+        ? uploadBytesResumable(ref(storage, displayPath), displayBlob, {
+            contentType: 'image/jpeg',
+          })
+        : null
 
-    activeTasks = thumbnailTask ? [uploadTask, thumbnailTask] : [uploadTask]
+    activeTasks = [uploadTask, thumbnailTask, displayTask].filter(
+      (task): task is UploadTask => task !== null,
+    )
     trackCombinedProgress(activeTasks, onProgress)
 
     try {
@@ -206,6 +237,7 @@ export function uploadMediaFile(
 
     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref)
     const thumbnailURL = thumbnailTask ? await getDownloadURL(thumbnailTask.snapshot.ref) : null
+    const displayURL = displayTask ? await getDownloadURL(displayTask.snapshot.ref) : null
 
     // uploaderName is omitted entirely (not written as null) so it satisfies
     // the Firestore rule's `data.uploaderName is string` check when present.
@@ -216,6 +248,7 @@ export function uploadMediaFile(
       sizeBytes: file.size,
       createdAt: serverTimestamp(),
       ...(thumbnailPath && thumbnailURL ? { thumbnailPath, thumbnailURL } : {}),
+      ...(displayPath && displayURL ? { displayPath, displayURL } : {}),
       ...(uploaderName ? { uploaderName } : {}),
     }
     await addDoc(collection(db, MEDIA_COLLECTION), mediaData)
