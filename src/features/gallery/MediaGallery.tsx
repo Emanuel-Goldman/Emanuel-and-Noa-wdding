@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MAX_PHOTO_ITEMS, MAX_VIDEO_ITEMS } from './constants'
+import { COUNTS_REFRESH_DEBOUNCE_MS, MAX_PHOTO_ITEMS, MAX_VIDEO_ITEMS } from './constants'
 import { formatBytes } from './formatBytes'
 import { getMediaCounts, getMediaStorageBytes } from './mediaRepository'
 import { MediaGalleryItem } from './MediaGalleryItem'
@@ -17,32 +17,43 @@ export function MediaGallery({ isAdmin }: { isAdmin: boolean }) {
 
   // Re-reads the true collection totals (not just the loaded page) each time
   // the live gallery page changes, so the badge stays accurate once pagination
-  // means `state.items` no longer covers every item in the gallery.
+  // means `state.items` no longer covers every item in the gallery. Debounced
+  // because every connected guest's listener fires on every upload from
+  // anyone at the party — without waiting for a quiet moment, a burst of
+  // uploads during a toast would fire one aggregate query per guest per
+  // upload instead of roughly one per guest total.
   useEffect(() => {
     if (state.status !== 'ready') return
     let cancelled = false
-    getMediaCounts()
-      .then((result) => {
-        if (!cancelled) setCounts(result)
-      })
-      .catch(() => {})
+    const timeoutId = window.setTimeout(() => {
+      getMediaCounts()
+        .then((result) => {
+          if (!cancelled) setCounts(result)
+        })
+        .catch(() => {})
+    }, COUNTS_REFRESH_DEBOUNCE_MS)
     return () => {
       cancelled = true
+      window.clearTimeout(timeoutId)
     }
   }, [state])
 
   // Admin-only: the storage total is an extra aggregate read guests never
-  // need, so it's only fetched once the panel is unlocked.
+  // need, so it's only fetched once the panel is unlocked. Same debounce
+  // rationale as the counts effect above.
   useEffect(() => {
     if (!isAdmin || state.status !== 'ready') return
     let cancelled = false
-    getMediaStorageBytes()
-      .then((result) => {
-        if (!cancelled) setStorageBytes(result)
-      })
-      .catch(() => {})
+    const timeoutId = window.setTimeout(() => {
+      getMediaStorageBytes()
+        .then((result) => {
+          if (!cancelled) setStorageBytes(result)
+        })
+        .catch(() => {})
+    }, COUNTS_REFRESH_DEBOUNCE_MS)
     return () => {
       cancelled = true
+      window.clearTimeout(timeoutId)
     }
   }, [isAdmin, state])
 
