@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MAX_PHOTO_ITEMS, MAX_VIDEO_ITEMS } from './constants'
-import { getMediaCounts } from './mediaRepository'
+import { formatBytes } from './formatBytes'
+import { getMediaCounts, getMediaStorageBytes } from './mediaRepository'
 import { MediaGalleryItem } from './MediaGalleryItem'
 import { MediaLightbox } from './MediaLightbox'
 import { useGalleryMedia } from './useGalleryMedia'
@@ -12,6 +13,7 @@ export function MediaGallery({ isAdmin }: { isAdmin: boolean }) {
   const [previewItem, setPreviewItem] = useState<MediaDocument | null>(null)
   const { deletingId, error: deletionError, remove } = useMediaDeletion()
   const [counts, setCounts] = useState<MediaCounts | null>(null)
+  const [storageBytes, setStorageBytes] = useState<number | null>(null)
 
   // Re-reads the true collection totals (not just the loaded page) each time
   // the live gallery page changes, so the badge stays accurate once pagination
@@ -28,6 +30,21 @@ export function MediaGallery({ isAdmin }: { isAdmin: boolean }) {
       cancelled = true
     }
   }, [state])
+
+  // Admin-only: the storage total is an extra aggregate read guests never
+  // need, so it's only fetched once the panel is unlocked.
+  useEffect(() => {
+    if (!isAdmin || state.status !== 'ready') return
+    let cancelled = false
+    getMediaStorageBytes()
+      .then((result) => {
+        if (!cancelled) setStorageBytes(result)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [isAdmin, state])
 
   return (
     <section className="gallery" aria-labelledby="gallery-heading">
@@ -59,7 +76,12 @@ export function MediaGallery({ isAdmin }: { isAdmin: boolean }) {
       )}
 
       {isAdmin && (
-        <p className="admin-notice">מצב ניהול פעיל — הקישו על סמל הפח כדי למחוק פריט.</p>
+        <>
+          <p className="admin-notice">מצב ניהול פעיל — הקישו על סמל הפח כדי למחוק פריט.</p>
+          <p className="admin-notice">
+            נפח אחסון משוער: {storageBytes !== null ? formatBytes(storageBytes) : 'מחשב…'}
+          </p>
+        </>
       )}
       {deletionError && (
         <p className="admin-notice admin-notice--error" role="alert">

@@ -4,12 +4,14 @@ import {
   collection,
   deleteDoc,
   doc as documentRef,
+  getAggregateFromServer,
   getCountFromServer,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  sum,
   where,
   type DocumentData,
   type Unsubscribe,
@@ -107,6 +109,20 @@ export async function getMediaCounts(): Promise<MediaCounts> {
     photos: photos.data().count,
     videos: videos.data().count,
   }
+}
+
+/**
+ * Total bytes of the original uploaded files, summed server-side (no need to
+ * download every document to add it up). Admin-only stat, not shown to
+ * guests. Approximate: it counts originals only, not the small thumbnail and
+ * display JPEG renditions generated alongside each photo, which add a modest
+ * amount on top.
+ */
+export async function getMediaStorageBytes(): Promise<number> {
+  const snapshot = await getAggregateFromServer(collection(db, MEDIA_COLLECTION), {
+    totalBytes: sum('sizeBytes'),
+  })
+  return snapshot.data().totalBytes
 }
 
 function isObjectAlreadyGone(error: unknown): boolean {
