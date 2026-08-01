@@ -10,7 +10,7 @@
   --color-border: #e3d9c9;
   --color-error: #b3261e;
 
-  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-body: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   --radius-sm: 8px;
@@ -87,21 +87,26 @@ body {
   margin-bottom: 0.85rem;
 }
 
+/* Hebrew text stays on the body font throughout — Cormorant Garamond has no
+   Hebrew glyphs, so styling Hebrew lines with --font-display silently falls
+   back to whatever generic serif the browser has, which reads as a font
+   mismatch against the rest of the page. --font-display is reserved for the
+   Latin "EMANUEL & NOA" title only. */
 .hero__kicker {
   margin: 0 0 1rem;
-  font-family: var(--font-display);
-  font-style: italic;
+  font-family: var(--font-body);
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
   color: var(--color-muted);
 }
 
 .hero__title {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(1.9rem, 6.5vw, 2.5rem);
-  letter-spacing: 0.03em;
+  font-weight: 600;
+  font-size: clamp(2.1rem, 7vw, 2.75rem);
+  letter-spacing: 0.04em;
   color: var(--color-ink);
 }
 
@@ -129,10 +134,10 @@ section {
 
 section h2 {
   margin: 0 0 1rem;
-  font-size: 1.2rem;
-  font-weight: 500;
-  font-family: var(--font-display);
-  letter-spacing: 0.01em;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  letter-spacing: 0;
 }
 
 .section-heading {
@@ -613,8 +618,9 @@ html:has(dialog[open]) {
 
 .code-dialog__form h2 {
   margin: 0 0 1rem;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.1rem;
 }
 
 .code-dialog__error {
