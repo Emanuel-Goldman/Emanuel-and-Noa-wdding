@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import {
   MAX_FILE_SIZE_BYTES,
+  MAX_FILES_PER_SELECTION,
   MAX_PHOTO_ITEMS,
   MAX_VIDEO_ITEMS,
   UPLOADER_NAME_STORAGE_KEY,
@@ -89,6 +90,23 @@ export function useMediaUpload() {
 
   const addFiles = useCallback(
     (fileList: FileList, uploaderName: string | null) => {
+      // Reject the whole selection rather than silently uploading only the
+      // first N — picking 40 photos and having 10 vanish with no explanation
+      // would be more confusing than being told to pick a smaller batch.
+      if (fileList.length > MAX_FILES_PER_SELECTION) {
+        setItems((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            fileName: `${fileList.length.toLocaleString('he-IL')} קבצים נבחרו`,
+            status: 'error',
+            progress: 0,
+            message: `אפשר להעלות עד ${MAX_FILES_PER_SELECTION} קבצים בכל פעם. בחרו פחות קבצים ונסו שוב.`,
+          },
+        ])
+        return
+      }
+
       const candidates: UploadCandidate[] = []
       const nextItems: UploadItemState[] = []
 

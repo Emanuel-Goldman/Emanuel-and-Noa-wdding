@@ -1,4 +1,7 @@
 export const MAX_FILE_SIZE_BYTES = 300 * 1024 * 1024 // 300MB, mirrors storage.rules
+// Per-selection cap, not the gallery total — stops someone from accidentally
+// picking their whole camera roll (or a synced album) in one go.
+export const MAX_FILES_PER_SELECTION = 10
 export const STORAGE_FOLDER = 'uploads'
 export const THUMBNAIL_STORAGE_FOLDER = 'uploads/thumbs'
 export const DISPLAY_STORAGE_FOLDER = 'uploads/display'
