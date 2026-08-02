@@ -1,6 +1,20 @@
 import { describeUploader } from './mediaCaption'
 import type { MediaDocument } from './types'
 
+// A `<source type>` the browser doesn't recognize makes it skip that source
+// outright, before even attempting to decode it — regardless of whether the
+// actual codec inside would have played fine. iPhone videos are commonly
+// `video/quicktime` (.mov), which Chrome/Firefox don't list as supported,
+// so guests on those browsers saw a dead player for videos that Safari
+// opened without issue. Only pass `type` for containers every evergreen
+// browser recognizes; otherwise omit it so the browser sniffs the content
+// itself instead of refusing upfront.
+const WIDELY_SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/ogg'])
+
+function playableSourceType(contentType: string): string | undefined {
+  return WIDELY_SUPPORTED_VIDEO_TYPES.has(contentType) ? contentType : undefined
+}
+
 type Props = {
   item: MediaDocument
   onSelect: (item: MediaDocument) => void
@@ -19,7 +33,7 @@ export function MediaGalleryItem({ item, onSelect, isAdmin, isDeleting, onDelete
         // Videos keep their inline native controls: wrapping them in a button
         // would swallow taps meant for play/scrub.
         <video controls playsInline preload="metadata" aria-label={caption}>
-          <source src={item.downloadURL} type={item.contentType} />
+          <source src={item.downloadURL} type={playableSourceType(item.contentType)} />
         </video>
       ) : (
         <button
