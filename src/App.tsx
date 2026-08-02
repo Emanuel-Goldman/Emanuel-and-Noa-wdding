@@ -31,7 +31,7 @@ export default function App() {
           <h1 className="hero__title" dir="ltr" lang="en">
             EMANUEL<span className="hero__amp">&amp;</span>NOA
           </h1>
-          <p className="hero__subtitle">שתפו את התמונות והסרטונים שלכם מהחגיגה!</p>
+          <p className="hero__subtitle">שתפו את התמונות והסרטונים שלכם מההתארגנות ומהחגיגה!</p>
         </div>
       </header>
       <main className="page">
