@@ -3,8 +3,8 @@ export const STORAGE_FOLDER = 'uploads'
 export const THUMBNAIL_STORAGE_FOLDER = 'uploads/thumbs'
 export const DISPLAY_STORAGE_FOLDER = 'uploads/display'
 export const MEDIA_COLLECTION = 'media'
-export const MAX_PHOTO_ITEMS = 1000
-export const MAX_VIDEO_ITEMS = 100
+export const MAX_PHOTO_ITEMS = 5000
+export const MAX_VIDEO_ITEMS = 500
 export const MAX_GALLERY_ITEMS = MAX_PHOTO_ITEMS + MAX_VIDEO_ITEMS
 export const GALLERY_PAGE_SIZE = 30
 
